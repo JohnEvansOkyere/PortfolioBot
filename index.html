@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot with Google Calendar</title>
+    <style>
+        #calendar-iframe {
+            display: none; /* Hide the iframe initially */
+            width: 800px;
+            height: 600px;
+            border: 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="chatbot">
+        <button onclick="showCalendar()">Book an Appointment</button>
+        <iframe
+            id="calendar-iframe"
+            src="https://calendar.google.com/calendar/embed?src=primary&ctz=UTC"
+            style="border: 0"
+            width="800"
+            height="600"
+            frameborder="0"
+            scrolling="no">
+        </iframe>
+    </div>
+
+    <!--------JS SCRIPT-->
+    <div id="slots"></div>
+    <script src="script.js"></script>
+</body>
+</html>

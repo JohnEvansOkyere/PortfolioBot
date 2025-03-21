@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+
+# Virtual environment
+myenv/
+venv/
+env/
+
+# Ngrok
+ngrok.exe
+ngrok.yaml
+.ngrok.exe.old
+
+# Environment variables
+.env
+
+# Sensitive files
+credentials.json
+token.json
+
+# IDE and editor files
+.vscode/
+.idea/
