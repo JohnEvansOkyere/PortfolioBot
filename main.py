@@ -11,7 +11,7 @@ app = FastAPI()
 
 # Google Calendar API settings
 SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
-CLIENT_SECRETS_FILE = 'C:\\Users\\GREJOY\\bot\\portfolio_appointment\\credentials.json'
+CLIENT_SECRETS_FILE = '/home/grejoy/Projects/portfolio_bot/PortfolioBot\\credentials.json'
 TOKEN_FILE = 'token.json'
 
 # Pydantic model for Dialogflow webhook request

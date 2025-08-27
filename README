@@ -1,0 +1,86 @@
+# PortfolioBot – Google Calendar Appointment API
+
+PortfolioBot is a FastAPI backend for booking appointments directly to your Google Calendar. It is designed to be used as an API endpoint for Dialogflow chatbots and includes a simple frontend for users to view and book slots.
+
+## Features
+
+- **Book appointments** via API and Dialogflow webhook
+- **Fetch available slots** from Google Calendar
+- **Google OAuth2 authentication**
+- **Frontend** with calendar embed and booking button
+
+## Project Structure
+
+```
+PortfolioBot/
+├── main.py           # FastAPI backend
+├── wsgi.py           # WSGI entry for PythonAnywhere
+├── requirements.txt  # Python dependencies
+├── index.html        # Frontend page
+├── script.js         # Frontend JS (if used)
+├── credentials.json  # Google API credentials (not tracked in git)
+├── token.json        # OAuth token (not tracked in git)
+└── .gitignore        # Git ignore rules
+```
+
+## Setup & Deployment
+
+### 1. Clone the repository
+
+```bash
+git clone <your-repo-url>
+cd PortfolioBot
+```
+
+### 2. Create and activate a virtual environment
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
+### 3. Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 4. Add your Google API credentials
+
+- Place your `credentials.json` in the project directory.
+
+### 5. Run locally (for development)
+
+```bash
+uvicorn main:app --reload
+```
+
+### 6. Deploy on PythonAnywhere
+
+- Upload all files to PythonAnywhere.
+- Set your web app’s WSGI entry point to `/home/<yourusername>/Projects/portfolio_bot/PortfolioBot/wsgi.py`.
+- Map static files for the frontend if needed.
+
+## API Endpoints
+
+- `GET /slots` – Fetch available calendar slots
+- `POST /book` – Book a slot (provide slot datetime)
+- `POST /webhook` – Dialogflow webhook for booking intent
+
+## Frontend
+
+- `index.html` provides a booking button and Google Calendar embed.
+- Extend `script.js` to call backend endpoints for dynamic slot booking.
+
+## Notes
+
+- Do **not** commit `credentials.json` or `token.json` (see `.gitignore`).
+- Update OAuth redirect URI in `main.py` for your PythonAnywhere domain.
+
+## License
+
+MIT
+
+---
+
+**Developed by John Evans Okyere**
