@@ -14,7 +14,7 @@ function handleDialogflowEvent(event) {
 // Fetch available slots from the backend
 async function fetchSlots() {
     try {
-        const response = await fetch('https://1654-102-176-75-159.ngrok-free.app/slots');
+        const response = await fetch('https://ba48e9502df7.ngrok-free.app/slots');
         const data = await response.json();
         const slotsDiv = document.getElementById('slots');
         slotsDiv.innerHTML = ''; // Clear previous slots
@@ -29,7 +29,7 @@ async function fetchSlots() {
 // Book a slot
 async function bookSlot(slot) {
     try {
-        const response = await fetch('https://1654-102-176-75-159.ngrok-free.app/book', {
+        const response = await fetch('https://ba48e9502df7.ngrok-free.app/book', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -52,3 +52,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const event = { name: 'SHOW_CALENDAR', data: {} };
     handleDialogflowEvent(event);
 });
+
+
+function loginWithGoogle() {
+    window.location.href = "https://ba48e9502df7.ngrok-free.app/authorize";
+}
