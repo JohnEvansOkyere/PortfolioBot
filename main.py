@@ -26,7 +26,7 @@ app.add_middleware(
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
 CLIENT_SECRETS_FILE = "/home/grejoy/Projects/portfolio_bot/PortfolioBot/credentials.json"
 TOKEN_FILE = "token.json"
-REDIRECT_URI = "https://portfoliobot-jqqv.onrender.com/"  
+REDIRECT_URI = "https://portfoliobot-jqqv.onrender.com/auth/callback"
 
 # --- EmailJS settings (from your portfolio config) ---
 EMAILJS_SERVICE_ID = "service_wpa4e28"

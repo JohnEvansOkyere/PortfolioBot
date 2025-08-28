@@ -1,5 +1,5 @@
 // -------- Config --------
-const BASE_URL = "https://portfoliobot-jqqv.onrender.com/"; // update when ngrok changes
+const BASE_URL = "https://portfoliobot-jqqv.onrender.com"; 
 
 // -------- Calendar iframe visibility --------
 function showCalendar() {
