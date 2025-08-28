@@ -266,3 +266,9 @@ async def authorize():
     flow = Flow.from_client_secrets_file(CLIENT_SECRETS_FILE, SCOPES, redirect_uri=REDIRECT_URI)
     auth_url, _ = flow.authorization_url(prompt="consent", access_type="offline", include_granted_scopes="true")
     return RedirectResponse(auth_url)
+
+
+@app.get("/")
+async def root():
+    return {"status": "ok", "message": "API is working on Render 🚀"}
+
