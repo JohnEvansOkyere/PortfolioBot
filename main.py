@@ -140,9 +140,8 @@ async def book_slot(body: BookRequest):
     Expects JSON body { slot: ISOString, name?, email?, phone?, details? }
     """
     try:
-        # parse time
-        iso = body.slot.replace("Z", "+00:00")
-        start_dt = datetime.fromisoformat(iso)
+        # Parse ISO string from frontend
+        start_dt = datetime.fromisoformat(body.slot)
         if start_dt.tzinfo is None:
             start_dt = start_dt.replace(tzinfo=timezone.utc)
         else:
@@ -157,7 +156,7 @@ async def book_slot(body: BookRequest):
             details=body.details or "Reserved via website",
         )
 
-        # Try sending email; fail gracefully
+        # Send email (fail-safe)
         try:
             send_email_via_emailjs(
                 name=body.name or "Client",
@@ -180,7 +179,7 @@ async def book_slot(body: BookRequest):
         return {"status": "error", "message": f"Booking failed: {str(e)}"}
 
 
-# ---------- Dialogflow Webhook ----------
+
 # ---------- Dialogflow Webhook ----------
 @app.post("/webhook")
 async def webhook(req: DialogflowRequest):
@@ -189,9 +188,9 @@ async def webhook(req: DialogflowRequest):
 
     if intent_name == "Book Appointment":
         try:
-            # Extract parameters
-            date_str = params.get("date")          # @sys.date, e.g., "2025-10-10"
-            time_str = params.get("time")          # @sys.time, e.g., "13:45"
+            # Extract Dialogflow parameters
+            date_str = params.get("date")      # @sys.date, e.g., "2025-10-10"
+            time_str = params.get("time")      # @sys.time, e.g., "13:45"
             details = params.get("any") or ""
             email = params.get("email") or ""
             phone = params.get("phone-number") or ""
@@ -199,11 +198,11 @@ async def webhook(req: DialogflowRequest):
             person = params.get("person", {})
             name = person.get("name") if isinstance(person, dict) else (person or "")
 
-            # Validate required params
+            # Validate required fields
             if not all([date_str, time_str, name]):
                 return {"fulfillmentText": "❌ Some details are missing. Please provide all required information."}
 
-            # Combine date + time into a full ISO datetime
+            # Combine date + time into ISO datetime
             dt_iso = f"{date_str}T{time_str}:00+00:00"
             start_dt = datetime.fromisoformat(dt_iso).astimezone(timezone.utc)
 
@@ -216,7 +215,7 @@ async def webhook(req: DialogflowRequest):
                 details=details or "N/A",
             )
 
-            # Try sending email (fail-safe)
+            # Send email (fail-safe)
             try:
                 send_email_via_emailjs(
                     name=name,
@@ -247,6 +246,7 @@ async def webhook(req: DialogflowRequest):
             return {"fulfillmentText": f"⚠️ An error occurred: {str(e)}"}
 
     return {"fulfillmentText": "I didn't understand that. Can you please rephrase?"}
+
 
 
 
