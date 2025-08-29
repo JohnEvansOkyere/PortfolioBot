@@ -48,22 +48,22 @@ class BookRequest(BaseModel):
 def authenticate_google_calendar():
     try:
         creds = None
-        if os.path.exists(TOKEN_FILE):
-            creds = Credentials.from_authorized_user_file(TOKEN_FILE, SCOPES)
+
+        # Load from ENV first
+        if os.getenv("GOOGLE_TOKEN"):
+            creds = Credentials.from_authorized_user_info(eval(os.getenv("GOOGLE_TOKEN")), SCOPES)
 
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
                 creds.refresh(GoogleRequest())
+                os.environ["GOOGLE_TOKEN"] = creds.to_json()
             else:
-                # Not authorized yet
                 raise HTTPException(status_code=401, detail="Google authentication required. Visit /authorize")
-
-            with open(TOKEN_FILE, "w") as token:
-                token.write(creds.to_json())
 
         return creds
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Auth error: {str(e)}")
+
 
 def get_calendar_service():
     creds = authenticate_google_calendar()
