@@ -176,6 +176,7 @@ async def book_slot(body: BookRequest):
         return {"status": "error", "message": f"Booking failed: {str(e)}"}
 
 # ---------- Dialogflow Webhook ----------
+# ---------- Dialogflow Webhook ----------
 @app.post("/webhook")
 async def webhook(req: DialogflowRequest):
     intent_name = req.queryResult.get("intent", {}).get("displayName")
@@ -184,8 +185,7 @@ async def webhook(req: DialogflowRequest):
     if intent_name == "Book Appointment":
         try:
             # Extract parameters safely
-            date = params.get("date")                    # often ISO (e.g., 2025-09-01T12:00:00Z)
-            time = params.get("time")                    # often ISO (e.g., 2025-08-28T11:30:00Z)
+            iso_time = params.get("time")  # full ISO datetime from Dialogflow
             details = params.get("any") or ""
             email = params.get("email") or ""
             phone = params.get("phone-number") or ""
@@ -193,19 +193,15 @@ async def webhook(req: DialogflowRequest):
             person = params.get("person", {})
             name = person.get("name") if isinstance(person, dict) else (person or "")
 
-            # Validate required params (choose your strictness)
-            if not all([time, name]):   # time is full ISO; date is optional because time usually carries date
+            # Validate required params
+            if not all([iso_time, name]):
                 return {"fulfillmentText": "❌ Some details are missing. Please provide all required information."}
 
-            # Use 'time' as the full ISO datetime
-            start_iso = time.replace("Z", "+00:00")
-            start_dt = datetime.fromisoformat(start_iso)
-            if start_dt.tzinfo is None:
-                start_dt = start_dt.replace(tzinfo=timezone.utc)
-            else:
-                start_dt = start_dt.astimezone(timezone.utc)
+            # Parse ISO datetime safely
+            start_dt = datetime.fromisoformat(iso_time.replace("Z", "+00:00"))
+            start_dt = start_dt.astimezone(timezone.utc)  # ensure UTC
 
-            # Create Calendar event
+            # Create Google Calendar event
             event_id = create_calendar_event(
                 start_time_utc=start_dt,
                 name=name,
@@ -214,24 +210,24 @@ async def webhook(req: DialogflowRequest):
                 details=details or "N/A",
             )
 
-            # Send EmailJS (notify you)
+            # Send EmailJS notification
             try:
                 send_email_via_emailjs(
                     name=name,
                     email=email or "no-email@local",
                     phone=phone or "N/A",
-                    date=(date or start_dt.date().isoformat()),
+                    date=start_dt.date().isoformat(),
                     time=start_dt.time().strftime("%H:%M"),
                     details=details or "N/A",
                 )
             except Exception as em_err:
                 print(f"EmailJS warning: {em_err}")
 
-            # Clean, fixed order confirmation
+            # Always use start_dt for date/time in confirmation
             return {
                 "fulfillmentText": (
                     "✅ Appointment booked successfully!\n\n"
-                    f"📅 Date: {(date or start_dt.date().isoformat())}\n"
+                    f"📅 Date: {start_dt.date().isoformat()}\n"
                     f"⏰ Time: {start_dt.time().strftime('%H:%M')} (UTC)\n"
                     f"👤 Name: {name}\n"
                     f"📧 Email: {email or 'N/A'}\n"
@@ -240,11 +236,13 @@ async def webhook(req: DialogflowRequest):
                     f"🆔 Event ID: {event_id}"
                 )
             }
+
         except Exception as e:
             return {"fulfillmentText": f"⚠️ An error occurred: {str(e)}"}
 
-    # default
+    # default fallback
     return {"fulfillmentText": "I didn't understand that. Can you please rephrase?"}
+
 
 # ---------- OAuth endpoints ----------
 @app.get("/auth/callback")
