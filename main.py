@@ -181,6 +181,7 @@ async def book_slot(body: BookRequest):
 
 
 # ---------- Dialogflow Webhook ----------
+# ---------- Dialogflow Webhook ----------
 @app.post("/webhook")
 async def webhook(req: DialogflowRequest):
     intent_name = req.queryResult.get("intent", {}).get("displayName")
@@ -188,8 +189,9 @@ async def webhook(req: DialogflowRequest):
 
     if intent_name == "Book Appointment":
         try:
-            # Extract parameters safely
-            iso_time = params.get("time")  # ISO datetime
+            # Extract parameters
+            date_str = params.get("date")          # @sys.date, e.g., "2025-10-10"
+            time_str = params.get("time")          # @sys.time, e.g., "13:45"
             details = params.get("any") or ""
             email = params.get("email") or ""
             phone = params.get("phone-number") or ""
@@ -197,11 +199,13 @@ async def webhook(req: DialogflowRequest):
             person = params.get("person", {})
             name = person.get("name") if isinstance(person, dict) else (person or "")
 
-            if not all([iso_time, name]):
+            # Validate required params
+            if not all([date_str, time_str, name]):
                 return {"fulfillmentText": "❌ Some details are missing. Please provide all required information."}
 
-            # Parse ISO datetime
-            start_dt = datetime.fromisoformat(iso_time.replace("Z", "+00:00")).astimezone(timezone.utc)
+            # Combine date + time into a full ISO datetime
+            dt_iso = f"{date_str}T{time_str}:00+00:00"
+            start_dt = datetime.fromisoformat(dt_iso).astimezone(timezone.utc)
 
             # Create Google Calendar event
             event_id = create_calendar_event(
@@ -212,7 +216,7 @@ async def webhook(req: DialogflowRequest):
                 details=details or "N/A",
             )
 
-            # Try sending EmailJS, fail gracefully
+            # Try sending email (fail-safe)
             try:
                 send_email_via_emailjs(
                     name=name,
@@ -225,6 +229,7 @@ async def webhook(req: DialogflowRequest):
             except Exception as em_err:
                 print(f"EmailJS warning (ignored): {em_err}")
 
+            # Return confirmation
             return {
                 "fulfillmentText": (
                     "✅ Appointment booked successfully!\n\n"
