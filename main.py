@@ -133,6 +133,7 @@ async def get_slots():
         return {"status": "error", "message": str(e)}
 
 # ---------- Book (from frontend) ----------
+# ---------- Book (from frontend) ----------
 @app.post("/book")
 async def book_slot(body: BookRequest):
     """
@@ -140,7 +141,6 @@ async def book_slot(body: BookRequest):
     """
     try:
         # parse time
-        # accept Z or offset; ensure timezone aware
         iso = body.slot.replace("Z", "+00:00")
         start_dt = datetime.fromisoformat(iso)
         if start_dt.tzinfo is None:
@@ -148,7 +148,7 @@ async def book_slot(body: BookRequest):
         else:
             start_dt = start_dt.astimezone(timezone.utc)
 
-        # Create calendar event
+        # Create Google Calendar event
         event_id = create_calendar_event(
             start_time_utc=start_dt,
             name=body.name or "Client",
@@ -157,7 +157,7 @@ async def book_slot(body: BookRequest):
             details=body.details or "Reserved via website",
         )
 
-        # Optionally send EmailJS if we have at least an email or phone
+        # Try sending email; fail gracefully
         try:
             send_email_via_emailjs(
                 name=body.name or "Client",
@@ -168,14 +168,18 @@ async def book_slot(body: BookRequest):
                 details=body.details or "Reserved via website",
             )
         except Exception as em_err:
-            # don't fail booking if email fails
-            print(f"EmailJS warning: {em_err}")
+            print(f"EmailJS warning (ignored): {em_err}")
 
-        return {"status": "success", "message": f"✅ Slot booked for {body.slot}", "eventId": event_id}
+        return {
+            "status": "success",
+            "message": f"✅ Slot booked for {start_dt.isoformat()}",
+            "eventId": event_id
+        }
+
     except Exception as e:
         return {"status": "error", "message": f"Booking failed: {str(e)}"}
 
-# ---------- Dialogflow Webhook ----------
+
 # ---------- Dialogflow Webhook ----------
 @app.post("/webhook")
 async def webhook(req: DialogflowRequest):
@@ -185,7 +189,7 @@ async def webhook(req: DialogflowRequest):
     if intent_name == "Book Appointment":
         try:
             # Extract parameters safely
-            iso_time = params.get("time")  # full ISO datetime from Dialogflow
+            iso_time = params.get("time")  # ISO datetime
             details = params.get("any") or ""
             email = params.get("email") or ""
             phone = params.get("phone-number") or ""
@@ -193,13 +197,11 @@ async def webhook(req: DialogflowRequest):
             person = params.get("person", {})
             name = person.get("name") if isinstance(person, dict) else (person or "")
 
-            # Validate required params
             if not all([iso_time, name]):
                 return {"fulfillmentText": "❌ Some details are missing. Please provide all required information."}
 
-            # Parse ISO datetime safely
-            start_dt = datetime.fromisoformat(iso_time.replace("Z", "+00:00"))
-            start_dt = start_dt.astimezone(timezone.utc)  # ensure UTC
+            # Parse ISO datetime
+            start_dt = datetime.fromisoformat(iso_time.replace("Z", "+00:00")).astimezone(timezone.utc)
 
             # Create Google Calendar event
             event_id = create_calendar_event(
@@ -210,7 +212,7 @@ async def webhook(req: DialogflowRequest):
                 details=details or "N/A",
             )
 
-            # Send EmailJS notification
+            # Try sending EmailJS, fail gracefully
             try:
                 send_email_via_emailjs(
                     name=name,
@@ -221,9 +223,8 @@ async def webhook(req: DialogflowRequest):
                     details=details or "N/A",
                 )
             except Exception as em_err:
-                print(f"EmailJS warning: {em_err}")
+                print(f"EmailJS warning (ignored): {em_err}")
 
-            # Always use start_dt for date/time in confirmation
             return {
                 "fulfillmentText": (
                     "✅ Appointment booked successfully!\n\n"
@@ -240,8 +241,8 @@ async def webhook(req: DialogflowRequest):
         except Exception as e:
             return {"fulfillmentText": f"⚠️ An error occurred: {str(e)}"}
 
-    # default fallback
     return {"fulfillmentText": "I didn't understand that. Can you please rephrase?"}
+
 
 
 # ---------- OAuth endpoints ----------
